@@ -34,7 +34,8 @@ func createTask(event *json.RawMessage,
 
 	// TODO remove hardcoded creds
 	sess := session.New(&aws.Config{
-		Region:      aws.String("us-west-2"),
+		Region: aws.String("us-west-2"),
+		// Credentials: credentials.NewStaticCredentials(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), ""),
 		Credentials: credentials.NewStaticCredentials("", "", ""),
 	})
 
@@ -70,7 +71,7 @@ func createTask(event *json.RawMessage,
 	}
 }
 
-// TODO refactor this madness. Creates a
+// TODO refactor this madness. Creates an AWS PutItem Item struct
 func createDynamoItem(task Task) map[string]*dynamodb.AttributeValue {
 	if task.User == "" && task.Completed == "" {
 		return map[string]*dynamodb.AttributeValue{
@@ -190,7 +191,7 @@ func main() {
 
 	// Sparta framework lambda function setup
 	var lambdaFunctions []*sparta.LambdaAWSInfo
-	lambdaFn := sparta.NewLambda(sparta.IAMRoleDefinition{}, createTask, &sparta.LambdaFunctionOptions{Description: "RESTful create for tasklist", Timeout: 10})
+	lambdaFn := sparta.NewLambda("taskAccessRole", createTask, &sparta.LambdaFunctionOptions{Description: "RESTful create for tasklist", Timeout: 10})
 	lambdaFunctions = append(lambdaFunctions, lambdaFn)
 
 	// Deploy it
