@@ -20,7 +20,7 @@ import (
 )
 
 // Task struct declaration
-type Task struct {
+type task struct {
 	User        string `json:"user"`
 	Description string `json:"description"`
 	Priority    *int   `json:"priority"`
@@ -36,20 +36,23 @@ func createTask(event *json.RawMessage,
 	sess := session.New(&aws.Config{
 		Region: aws.String("us-west-2"),
 		// Credentials: credentials.NewStaticCredentials(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), ""),
+		//http://docs.aws.amazon.com/sdk-for-go/api/service/cognitoidentity/  maybe?
 		Credentials: credentials.NewStaticCredentials("", "", ""),
 	})
 
 	// Create a DynamoDB client with additional configuration
 	db := dynamodb.New(sess, aws.NewConfig().WithRegion("us-west-2"))
 
-	var task Task
+	var task task
 	json.Unmarshal(*event, &task)
 
 	// trim whitespace
 	task.sanitize()
+
+	//
 	task.convertTimeToISO()
 
-	// data validation based on requirements
+	// Data validation based on requirements. If fails bail out.
 	err := task.validateTask()
 	if err != nil {
 		log.Printf("Bad Request. Error: %v", err)
@@ -72,7 +75,7 @@ func createTask(event *json.RawMessage,
 }
 
 // TODO refactor this madness. Creates an AWS PutItem Item struct
-func createDynamoItem(task Task) map[string]*dynamodb.AttributeValue {
+func createDynamoItem(task task) map[string]*dynamodb.AttributeValue {
 	if task.User == "" && task.Completed == "" {
 		return map[string]*dynamodb.AttributeValue{
 			"taskid": {
@@ -135,7 +138,7 @@ func createDynamoItem(task Task) map[string]*dynamodb.AttributeValue {
 	}
 }
 
-func (t *Task) sanitize() {
+func (t *task) sanitize() {
 	if t.User != "" {
 		t.User = strings.TrimSpace(t.User)
 	}
@@ -147,20 +150,21 @@ func (t *Task) sanitize() {
 	}
 }
 
-func (t *Task) convertTimeToISO() {
+func (t *task) convertTimeToISO() {
 	// if completed is provided alter timestamp to ISO8061
 	if t.Completed != "" {
 		tt, err := time.Parse("20060102T15:04:05-07:00", t.Completed)
 		if err != nil {
 			log.Printf("Unable to format provided timestamp provided in completed")
-			t.Completed = ""
-		} else {
-			t.Completed = string(tt.Format("2006-01-02T15:04:05-0700"))
+			t.Completed = "0"
 		}
+		t.Completed = string(tt.Format("2006-01-02T15:04:05-0700"))
+	} else {
+		t.Completed = "0"
 	}
 }
 
-func (t Task) validateTask() error {
+func (t task) validateTask() error {
 	log.Printf("Task: %v\n", t)
 
 	// If user chooses to provide email then validate 5 <= user <= 254

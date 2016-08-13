@@ -96,21 +96,13 @@ func updateTask(event *json.RawMessage,
 
 // TODO refactor this madness. Creates an AWS UpdateItemInput AttributeUpdates struct
 func createDynamoItem(task task) map[string]*dynamodb.AttributeValueUpdate {
-	if task.User == "" && task.Completed == "" {
+	if task.User == "" {
 		return map[string]*dynamodb.AttributeValueUpdate{
-			"description": {
+			"user": {
 				Value: &dynamodb.AttributeValue{
-					S: aws.String(task.Description),
+					S: aws.String("null"),
 				},
 			},
-			"priority": {
-				Value: &dynamodb.AttributeValue{
-					S: aws.String(strconv.Itoa(*task.Priority)), // aws driver doesnt have int property. Deal with it later
-				},
-			},
-		}
-	} else if task.User == "" {
-		return map[string]*dynamodb.AttributeValueUpdate{
 			"description": {
 				Value: &dynamodb.AttributeValue{
 					S: aws.String(task.Description),
@@ -124,24 +116,6 @@ func createDynamoItem(task task) map[string]*dynamodb.AttributeValueUpdate {
 			"completed": {
 				Value: &dynamodb.AttributeValue{
 					S: aws.String(task.Completed),
-				},
-			},
-		}
-	} else if task.Completed == "" {
-		return map[string]*dynamodb.AttributeValueUpdate{
-			"user": {
-				Value: &dynamodb.AttributeValue{
-					S: aws.String(task.User),
-				},
-			},
-			"description": {
-				Value: &dynamodb.AttributeValue{
-					S: aws.String(task.Description),
-				},
-			},
-			"priority": {
-				Value: &dynamodb.AttributeValue{
-					S: aws.String(strconv.Itoa(*task.Priority)), // aws driver doesnt have int property. Deal with it later
 				},
 			},
 		}
@@ -191,10 +165,11 @@ func (t *task) convertTimeToISO() {
 		tt, err := time.Parse("20060102T15:04:05-07:00", t.Completed)
 		if err != nil {
 			log.Printf("Unable to format provided timestamp provided in completed")
-			t.Completed = ""
-		} else {
-			t.Completed = string(tt.Format("2006-01-02T15:04:05-0700"))
+			t.Completed = "0"
 		}
+		t.Completed = string(tt.Format("2006-01-02T15:04:05-0700"))
+	} else {
+		t.Completed = "0"
 	}
 }
 
