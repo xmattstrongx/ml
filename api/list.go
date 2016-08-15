@@ -2,9 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
-	"strconv"
 
 	"net/http"
 
@@ -37,45 +34,21 @@ func ListTasks(event *json.RawMessage,
 	}
 	resp, err := db.Scan(params)
 	if err != nil {
-		log.Println(err.Error())
-	} else {
-
-		var tasks []Task
-
-		if len(resp.Items) > 0 {
-			for _, v := range resp.Items {
-				tasks = append(tasks, attributesToTask(v))
-			}
-		}
-
-		result, _ := json.Marshal(tasks)
-
-		w.Write(result)
-		fmt.Println(resp)
+		logger.Errorf("DB Error resp: %+v\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-}
 
-func attributesToTask(info map[string]*dynamodb.AttributeValue) Task {
-	var t Task
-	if value, missing := info["taskid"]; missing {
-		t.TaskID = *value.S
-	}
-	if value, missing := info["user"]; missing {
-		t.User = *value.S
-	}
-	if value, missing := info["description"]; missing {
-		t.Description = *value.S
-	}
-	if value, missing := info["priority"]; missing {
-		pr, err := strconv.Atoi(*value.S)
-		if err == nil {
-			t.Priority = &pr
+	var tasks []Task
+
+	if len(resp.Items) > 0 {
+		for _, v := range resp.Items {
+			tasks = append(tasks, AttributesToTask(v))
 		}
 	}
-	if value, missing := info["completed"]; missing {
-		t.Completed = *value.S
-	}
-	return t
+
+	result, _ := json.Marshal(tasks)
+	w.Write(result)
 }
 
 func GetListLambda() *sparta.LambdaAWSInfo {

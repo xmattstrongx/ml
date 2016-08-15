@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 
 	"net/http"
@@ -39,7 +38,9 @@ func DeleteTask(event *json.RawMessage,
 	json.Unmarshal([]byte(lambdaEvent.Body), &taskid)
 
 	// trim whitespace
-	taskid.sanitize()
+	if taskid.TaskID != "" {
+		taskid.TaskID = strings.TrimSpace(taskid.TaskID)
+	}
 
 	// verify item exists before delete
 	exists, err := db.GetItem(&dynamodb.GetItemInput{
@@ -54,8 +55,9 @@ func DeleteTask(event *json.RawMessage,
 		},
 	})
 	if err != nil {
-		log.Fatal(err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
+		logger.Errorf("DB Error resp: %+v\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	// If ID exists in DB continue performing delete
@@ -71,26 +73,18 @@ func DeleteTask(event *json.RawMessage,
 		}
 
 		//Delete item from dynamoDB. If that fails bail out.
-		resp, err := db.DeleteItem(params)
+		_, err := db.DeleteItem(params)
 		if err != nil {
-			log.Printf("In Error resp: %+v\n", resp)
-			log.Fatal(err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
+			logger.Errorf("DB Error resp: %+v\n", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
 			result, _ := json.Marshal(taskid)
-			log.Println("Delete successful!")
-			w.WriteHeader(http.StatusAccepted)
+			logger.Info("Delete successful!")
 			w.Write(result)
 		}
-
 	} else {
-		fmt.Fprintf(w, "Cannot delete non-existing id: %s", taskid.TaskID)
-	}
-}
-
-func (t *Taskid) sanitize() {
-	if t.TaskID != "" {
-		t.TaskID = strings.TrimSpace(t.TaskID)
+		res, _ := json.Marshal(fmt.Sprintf("Cannot delete non-existing id: %s", taskid.TaskID))
+		w.Write(res)
 	}
 }
 

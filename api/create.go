@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"net/http"
 
@@ -45,33 +44,31 @@ func CreateTask(event *json.RawMessage,
 	// trim whitespace
 	task.sanitize()
 
-	task.convertTimeToISO()
+	task.Completed = ConvertTimeToISO(task.Completed)
 
 	// Data validation based on requirements. If fails bail out.
 	err = ValidateTask(task)
 	if err != nil {
-		log.Printf("Bad Request. Error: %v", err)
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		logger.Errorf("Bad Request. Error: %v", err)
 		fmt.Fprintf(w, "Error: %s", err.Error())
-	} else {
-		params := &dynamodb.PutItemInput{
-			TableName: aws.String("task-lists"),
-			Item:      CreateDynamoDBAttributeValue(task),
-		}
-
-		// insert new item in to dynamoDB. If that fails bail out.
-		resp, err := db.PutItem(params)
-		if err != nil {
-			log.Printf("In Error resp: %+v\n", resp)
-			log.Fatal(err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
-		} else {
-			log.Println("Create successful!")
-			result, _ := json.Marshal(task)
-			w.WriteHeader(http.StatusCreated)
-			w.Write(result)
-		}
+		return
 	}
+	params := &dynamodb.PutItemInput{
+		TableName: aws.String("task-lists"),
+		Item:      CreateDynamoDBAttributeValue(task),
+	}
+
+	// insert new item in to dynamoDB. If that fails bail out.
+	_, err = db.PutItem(params)
+	if err != nil {
+		logger.Errorf("DB Error resp: %+v\n", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	} else {
+		logger.Info("Create successful!")
+		result, _ := json.Marshal(task)
+		w.Write(result)
+	}
+
 }
 
 func GetCreateLambda() *sparta.LambdaAWSInfo {

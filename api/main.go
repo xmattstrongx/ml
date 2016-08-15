@@ -10,15 +10,11 @@ func main() {
 	deleteLambdaFn := GetDeleteLambda()
 	updateLambdaFn := GetUpdateLambda()
 	emailLambdaFb := GetEmailLambda()
-	// lambdaFn := sparta.NewLambda("taskAccessRole", a, &sparta.LambdaFunctionOptions{Description: "RESTful create for tasklist", Timeout: 10})
-	lambdaFunctions = append(lambdaFunctions, createLambdaFn)
-	lambdaFunctions = append(lambdaFunctions, listLamdbaFn)
-	lambdaFunctions = append(lambdaFunctions, deleteLambdaFn)
-	lambdaFunctions = append(lambdaFunctions, updateLambdaFn)
-	lambdaFunctions = append(lambdaFunctions, emailLambdaFb)
 
-	stage := sparta.NewStage("prod")
-	apiGateway := sparta.NewAPIGateway("MySpartaAPI", stage)
+	lambdaFunctions = append(lambdaFunctions, createLambdaFn, listLamdbaFn, deleteLambdaFn, updateLambdaFn, emailLambdaFb)
+
+	stage := sparta.NewStage("stage")
+	apiGateway := sparta.NewAPIGateway("TaskListAPI", stage)
 
 	// Bad framework wont allow me to assign multiple functions to a different resource and associate by HTTP verb.
 	// resulting in awful RESTful route design... sigh...

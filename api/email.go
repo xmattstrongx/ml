@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/Sirupsen/logrus"
@@ -28,14 +27,14 @@ func EmailTask(event *json.RawMessage,
 
 	incompleteTaskList, err := getIncompletedTasks(sess)
 	if err != nil {
-		log.Println(err.Error())
+		logger.Error(err)
 	}
 
 	var tasks []Task
 
 	if len(incompleteTaskList.Items) > 0 {
 		for _, v := range incompleteTaskList.Items {
-			tasks = append(tasks, attributesToTask(v))
+			tasks = append(tasks, AttributesToTask(v))
 		}
 
 		emailParams := getSendEmailInput(tasks)
@@ -50,7 +49,7 @@ func EmailTask(event *json.RawMessage,
 			}
 		}
 	} else {
-		log.Println("No incomplete tasks")
+		logger.Info("No incomplete tasks")
 	}
 }
 

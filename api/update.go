@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"net/http"
 
@@ -53,8 +52,9 @@ func UpdateTask(event *json.RawMessage,
 		},
 	})
 	if err != nil {
-		log.Fatal(err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
+		logger.Error("Start Request", "Bad request: %s", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	// if taskid exists continue update operation
@@ -62,11 +62,10 @@ func UpdateTask(event *json.RawMessage,
 
 		// Perform data validation based on requirements. If data validatin fails bail out.
 		if err = ValidateTask(task); err != nil {
-			log.Printf("Bad Request. Error: %v", err)
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			logger.Errorf("Bad Request. Error: %v", err)
 			fmt.Fprintf(w, "Error: %s", err.Error())
 		} else {
-			task.convertTimeToISO()
+			task.Completed = ConvertTimeToISO(task.Completed)
 
 			params := &dynamodb.UpdateItemInput{
 				Key: map[string]*dynamodb.AttributeValue{ // Required
@@ -77,20 +76,19 @@ func UpdateTask(event *json.RawMessage,
 				TableName:        aws.String("task-lists"),
 				AttributeUpdates: CreateDynamoDBAttributeValueUpdate(task),
 			}
-			resp, err := db.UpdateItem(params)
+			_, err := db.UpdateItem(params)
 			if err != nil {
-				log.Printf("In Error resp: %+v\n", resp)
-				log.Fatal(err.Error())
-				w.WriteHeader(http.StatusInternalServerError)
+				logger.Errorf("DB Error resp: %+v\n", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 			} else {
-				log.Println("Update successful!")
+				logger.Info("Update successful!")
 				result, _ := json.Marshal(task)
-				w.WriteHeader(http.StatusCreated)
 				w.Write(result)
 			}
 		}
 	} else {
-		fmt.Fprintf(w, "Update failed. No item exists with id: %s", task.TaskID)
+		res, _ := json.Marshal(fmt.Sprintf("No item to update with taskid: %s", task.TaskID))
+		w.Write(res)
 	}
 }
 
