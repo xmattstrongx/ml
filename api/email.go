@@ -54,5 +54,5 @@ func EmailTask(event *json.RawMessage,
 }
 
 func GetEmailLambda() *sparta.LambdaAWSInfo {
-	return sparta.NewLambda("taskAccessRole", EmailTask, &sparta.LambdaFunctionOptions{Description: "Email job for tasklist", Timeout: 10})
+	return sparta.NewLambda("emailRole", EmailTask, &sparta.LambdaFunctionOptions{Description: "Email job for tasklist", Timeout: 10})
 }

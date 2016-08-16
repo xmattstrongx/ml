@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -34,8 +33,6 @@ type Task struct {
 type Taskid struct {
 	TaskID string `json:"taskid"`
 }
-
-var logger *logrus.Logger
 
 func LoadConfig(path string) Configuration {
 	file, err := ioutil.ReadFile(path)

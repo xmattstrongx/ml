@@ -21,13 +21,16 @@
 - taskAccessRole
 - emailRole
 
+### Swagger (WIP)
+- http://54.245.44.203:8080/
+- This was suprpising more difficult than I anticipated. Still not working because of a CORS issue and the nginx server I am hosting my own swagger-ui on.
 
 ### Todos
 
  - Write Tests, tests and more test!
  - Correct HTTP status codes for returns (particularly 400 bad request)
  - Refactor all DB interaction into a repo package
- - Add swagger(OpenAPI) definition
+ - Finish swagger(OpenAPI)
  - Add More Code Comments
  - Watch Sparta.io die in a fire
  - Learn Node.JS so I dont need Sparta.io after the fire incident

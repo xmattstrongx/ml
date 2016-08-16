@@ -1,6 +1,16 @@
 package main
 
-import sparta "github.com/mweagle/Sparta"
+import (
+	"github.com/Sirupsen/logrus"
+	sparta "github.com/mweagle/Sparta"
+)
+
+var logger = logrus.New()
+
+func init() {
+	logger.Formatter = new(logrus.JSONFormatter)
+	logger.Formatter = new(logrus.TextFormatter) // default
+}
 
 func main() {
 
@@ -33,6 +43,8 @@ func main() {
 
 	apiGatewayUpdateResource, _ := apiGateway.NewResource("/api/tasks/update", updateLambdaFn)
 	apiGatewayUpdateResource.NewMethod("PUT")
+
+	apiGateway.CORSEnabled = true
 
 	// Deploy it
 	sparta.Main("TaskLists",
